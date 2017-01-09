@@ -8,16 +8,16 @@
       <div class="flex-row">
         <preset-ranges :presets="options.presets" @onPreset="doPreset"></preset-ranges>
         <div class="flex-row calendar" v-if="month_cnt <= 1">
-          <month-calendar class="cal_single" :datum="month_right" :options="params" @onSelect="doSelect"></month-calendar>
+          <month-calendar class="cal_left cal_right" :datum="month_right" :options="params" @onSelect="doSelect" @onPrev="doPrev" @onNext="doNext"></month-calendar>
         </div>
         <div class="flex-row calendar" v-if="month_cnt == 2">
-          <month-calendar class="cal_left"  :datum="month_left"  :options="params" @onSelect="doSelect"></month-calendar>
-          <month-calendar class="cal_right" :datum="month_right" :options="params" @onSelect="doSelect"></month-calendar>
+          <month-calendar class="cal_left"  :datum="month_center" :options="params" @onSelect="doSelect" @onPrev="doPrev"></month-calendar>
+          <month-calendar class="cal_right" :datum="month_right"  :options="params" @onSelect="doSelect" @onNext="doNext"></month-calendar>
         </div>
         <div class="flex-row calendar" v-if="month_cnt >= 3">
-          <month-calendar class="cal_left"   :datum="month_left"   :options="params" @onSelect="doSelect"></month-calendar>
+          <month-calendar class="cal_left"   :datum="month_left"   :options="params" @onSelect="doSelect" @onPrev="doPrev"></month-calendar>
           <month-calendar class="cal_center" :datum="month_center" :options="params" @onSelect="doSelect"></month-calendar>
-          <month-calendar class="cal_right"  :datum="month_right"  :options="params" @onSelect="doSelect"></month-calendar>
+          <month-calendar class="cal_right"  :datum="month_right"  :options="params" @onSelect="doSelect" @onNext="doNext"></month-calendar>
         </div>
       </div>
       <div class="button-panel" v-if="txt_apply !='' || txt_clear !='' || txt_cancel !=''">
@@ -40,7 +40,7 @@ import moment from 'moment'
 import PresetRanges from './PresetRanges.vue'
 import MonthCalendar from './MonthCalendar.vue'
 
-export default 
+export default
 {
   name: 'date-time-picker',
   components:
@@ -59,11 +59,10 @@ export default
       }
     }
   },
-  data: function() 
+  data: function()
   {
     var tmp =
     {
-			rangeSplitter: ' - ', // string to use between dates
 			dateFormat: 'M d, yy', // displayed date format. Available formats: http://api.jqueryui.com/datepicker/#utility-formatDate
 			altFormat: 'yy-mm-dd', // submitted date format - inside JSON {"start":"...","end":"..."}
 			verticalOffset: 0, // offset of the dropdown relative to the closest edge of the trigger button
@@ -72,6 +71,7 @@ export default
       is_opened: false,
       pos_x: 200,
       pos_y: 200,
+      datum: null,
       start_date: null,
       final_date: null,
       old_start: null,
@@ -79,6 +79,10 @@ export default
       state: 0, // the state of the finite automata
     };
     return tmp; // without Var there are strange unlogical syntax errors
+  },
+  created: function()
+  {
+    this.datum = this.cur_date;
   },
   computed:
   {
@@ -148,12 +152,30 @@ export default
       if(this.options.applyOnMenuSelect == null) return true;
         else return this.options.applyOnMenuSelect;
     },
+    cur_date: function()
+    {
+      if(this.options.cur_date == null) return new Date();
+        else return this.options.cur_date;
+    },
     month_left: function()
     {
-      // previous or the month before previous
-      var d = new Date(), y = d.getFullYear(), m = d.getMonth();
+      // the month before previous
+      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth();
       m--;
-      if(this.month_cnt >= 3) m--;
+      m--;
+      if(m<0)
+      {
+        m += 12;
+        y--;
+      }
+      d.setFullYear(y,m,1);
+      return d;
+    },
+    month_center: function()
+    {
+      // previous month
+      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth();
+      m--;
       if(m<0)
       {
         m += 12;
@@ -165,24 +187,11 @@ export default
     month_right: function()
     {
       // current month
-      return new Date();
-    },
-    month_center: function()
-    {
-      // previous month
-      var d = new Date(), y = d.getFullYear(), m = d.getMonth();
-      m--;
-      if(m<0)
-      {
-        m += 12;
-        y--;
-      }
-      d.setFullYear(y,m,1);
-      return d;
+      return this.datum;
     },
     params: function()
     {
-      var tmp = 
+      var tmp =
       {
         max_today: this.max_today,
         week_start: this.week_start,
@@ -211,7 +220,7 @@ export default
     doApply: function()
     {
       this.is_opened = false;
-      
+
       this.$emit('onApply',this.start_date,this.final_date);
     },
     doClear: function()
@@ -244,7 +253,7 @@ export default
           break;
         case 1: // 2-nd click
           if(this.start_date <= d) this.final_date = d;
-          else 
+          else
           {
             this.final_date = this.start_date;
             this.start_date = d;
@@ -252,6 +261,30 @@ export default
           this.state = 0;
           break;
       }
+    },
+    doPrev: function()
+    {
+      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth();
+      m--;
+      if(m<0)
+      {
+        m += 12;
+        y--;
+      }
+      d.setFullYear(y,m,1);
+      this.datum = d;
+    },
+    doNext: function()
+    {
+      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth();
+      m++;
+      if(m>11)
+      {
+        m -= 12;
+        y++;
+      }
+      d.setFullYear(y,m,1);
+      this.datum = d;
     }
   }
 }
@@ -265,7 +298,7 @@ $bord_radius: 4px;
   -webkit-border-radius: $radius;
      -moz-border-radius: $radius;
       -ms-border-radius: $radius;
-          border-radius: $radius;  
+          border-radius: $radius;
 }
 
 .triggerbutton
@@ -312,7 +345,7 @@ $bord_radius: 4px;
   border-top: 1px solid #aaa;
 }
 
-.button-primary, 
+.button-primary,
 .button-secondary
 {
   margin-top: 6px;

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="calendar-header">
-      <div title="Prev" class="prev-box">
+      <div title="Prev" class="prev-box" @click="doPrev">
         <svg viewBox="0 0 32 32" width="14px" height="14px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="arrow-active">
           <path d="M 16,32 C 24.836,32 32,24.836 32,16.002 32,7.164 24.836,0 16,0 7.164,0 0,7.164 0,16.002 0,24.836 7.164,32 16,32 Z M 19.936159,8.9720854 19.962432,23.075732 8.0525452,16.028273 Z" />
         </svg>
@@ -9,7 +9,7 @@
       <div class="calendar-title">
         <span class="calendar-month">{{ cal_month | month_name }}</span>&nbsp;<span class="calendar-year">{{ cal_year }}</span>
       </div>
-      <div title="Next" class="next-box">
+      <div title="Next" class="next-box" @click="doNext">
         <svg viewBox="0 0 32 32" width="14px" height="14px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" :class="[last_month ? 'arrow-disabled' : 'arrow-active']">
           <path d="M 16,32 C 7.164,32 0,24.836 0,16.002 0,7.164 7.164,0 16,0 24.836,0 32,7.164 32,16.002 32,24.836 24.836,32 16,32 Z M 12.063841,8.9720854 12.037568,23.075732 23.947455,16.028273 Z" />
         </svg>
@@ -34,7 +34,7 @@
 
 <script>
 
-export default 
+export default
 {
   name: 'month-calendar',
   props:
@@ -53,12 +53,10 @@ export default
       }
     }
   },
-  data: function() 
+  data: function()
   {
     var tmp =
     {
-      cal_year: this.datum.getFullYear(),
-      cal_month: this.datum.getMonth(),
 			dateFormat: 'M d, yy', // displayed date format. Available formats: http://api.jqueryui.com/datepicker/#utility-formatDate
 			altFormat: 'yy-mm-dd', // submitted date format - inside JSON {"start":"...","end":"..."}
 			verticalOffset: 0, // offset of the dropdown relative to the closest edge of the trigger button
@@ -73,6 +71,14 @@ export default
   },
   computed:
   {
+    cal_year: function()
+    {
+      return this.datum.getFullYear();
+    },
+    cal_month: function()
+    {
+      return this.datum.getMonth();
+    },
     week_start: function()
     {
       var p = this.options;
@@ -84,7 +90,7 @@ export default
     {
       var day = this.week_start;
       return [ // [ must be on the same row, otherwise strange behavior
-        day, 
+        day,
         this.week_mod(day+1),
         this.week_mod(day+2),
         this.week_mod(day+3),
@@ -127,9 +133,8 @@ export default
         var d = new Date(), y = d.getFullYear();
         if(this.cal_year > y) return true;
         if(this.cal_year == y && this.cal_month >= d.getMonth()) return true;
-        return false;
       }
-      else return false;
+      return false;
     },
   },
   filters:
@@ -201,7 +206,7 @@ export default
       d.setMinutes(0);
       d.setSeconds(0);
       d.setMilliseconds(0);
-      this.$emit('onSelect',d); 
+      this.$emit('onSelect',d);
     },
     is_today: function(mday)
     {
@@ -293,9 +298,9 @@ export default
     makeWeek: function(w)
     {
       var start = this.first_day, max = this.month_days, day = 7*w - (start-1) + 1;
-      var res = 
+      var res =
       [
-        day   > max ? 0 : (day   < 1 ? 0 : day), 
+        day   > max ? 0 : (day   < 1 ? 0 : day),
         day+1 > max ? 0 : (day+1 < 1 ? 0 : day+1),
         day+2 > max ? 0 : (day+2 < 1 ? 0 : day+2),
         day+3 > max ? 0 : (day+3 < 1 ? 0 : day+3),
@@ -304,6 +309,14 @@ export default
         day+6 > max ? 0 : (day+6 < 1 ? 0 : day+6),
       ];
       return res;
+    },
+    doPrev: function()
+    {
+      this.$emit('onPrev');
+    },
+    doNext: function()
+    {
+      if(!this.last_month) this.$emit('onNext');
     }
   }
 }
@@ -317,7 +330,7 @@ $bord_radius: 4px;
   -webkit-border-radius: $radius;
      -moz-border-radius: $radius;
       -ms-border-radius: $radius;
-          border-radius: $radius;  
+          border-radius: $radius;
 }
 
 @mixin bord-rad-left($radius)
@@ -325,11 +338,11 @@ $bord_radius: 4px;
   -webkit-border-top-left-radius: $radius;
      -moz-border-top-left-radius: $radius;
       -ms-border-top-left-radius: $radius;
-          border-top-left-radius: $radius;  
+          border-top-left-radius: $radius;
   -webkit-border-bottom-left-radius: $radius;
      -moz-border-bottom-left-radius: $radius;
       -ms-border-bottom-left-radius: $radius;
-          border-bottom-left-radius: $radius;  
+          border-bottom-left-radius: $radius;
 }
 
 @mixin bord-rad-right($radius)
@@ -337,11 +350,11 @@ $bord_radius: 4px;
   -webkit-border-top-right-radius: $radius;
      -moz-border-top-right-radius: $radius;
       -ms-border-top-right-radius: $radius;
-          border-top-right-radius: $radius;  
+          border-top-right-radius: $radius;
   -webkit-border-bottom-right-radius: $radius;
      -moz-border-bottom-right-radius: $radius;
       -ms-border-bottom-right-radius: $radius;
-          border-bottom-right-radius: $radius;  
+          border-bottom-right-radius: $radius;
 }
 
 .calendar-header
@@ -368,7 +381,7 @@ $bord_radius: 4px;
   line-height: 1.8em;
   text-align: center;
   color: #222;
-  font-weight: bold;  
+  font-weight: bold;
   flex-grow: 1;
 }
 
