@@ -15,14 +15,37 @@
 				</p>
 				<p>and turn it into:</p>
 				<p>
-					<date-picker></date-picker>
+					<date-picker :options="{inline_picker:true, start_date: start, final_date: final}"></date-picker>
 				</p>
 			</div>
 			<div class="col-md-8">
 				<h3>Example Code</h3>
         <pre>
 					<code class="html">
-&lt;date-picker v-bind:options="object_with_options"&gt;&lt;/date-picker&gt;
+&lt;date-picker v-bind:options="{inline_picker:true, start_date: start, final_date: final}"&gt;&lt;/date-picker&gt;
+
+&lt;script&gt;
+export default 
+{
+  name: 'app',
+  data () 
+  {
+    return {start:null,final:null};
+  },
+  created ()
+  {
+    var ds = new Date(), df = new Date();
+    ds.setFullYear(2016,10,5);
+    df.setFullYear(2016,11,20);
+    this.start = ds;
+    this.final = df;
+  },
+  methods:
+  {
+    
+  }
+}
+&lt;/script&gt;
 					</code>
         </pre>
 		</article>
@@ -37,11 +60,15 @@ export default
   name: 'app',
   data () 
   {
-    return {};
+    return {start:null,final:null};
   },
   created ()
   {
-    
+		var ds = new Date(), df = new Date();
+		ds.setFullYear(2016,10,5);
+		df.setFullYear(2016,11,20);
+    this.start = ds;
+		this.final = df;
   },
   methods:
   {

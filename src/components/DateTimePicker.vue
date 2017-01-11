@@ -1,10 +1,10 @@
 <template>
-  <div>
+  <div class="picker_div">
     <button type="button" class="triggerbutton" role="button" aria-disabled="false" @click="toggleCalendar">
       <span class="triggerbutton-text">{{ placeholder }}</span>
       <span class="triggerbutton-icon">&#9660;</span>
     </button>
-    <div class="daterangepicker" v-if="is_opened" :style="{left: pos_x+'px', top: pos_y+'px'}">
+    <div class="daterangepicker" v-if="is_opened" :style="picker_style">
       <div class="flex-row">
         <preset-ranges :presets="options.presets" @onPreset="doPreset"></preset-ranges>
         <div class="flex-row calendar" v-if="month_cnt <= 1">
@@ -72,8 +72,8 @@ export default
       pos_x: 200,
       pos_y: 200,
       datum: null,
-      start_date: null,
-      final_date: null,
+      start_date: this.options.start_date,
+      final_date: this.options.final_date,
       old_start: null,
       old_final: null,
       state: 0, // the state of the finite automata
@@ -134,6 +134,11 @@ export default
       if(typeof this.options.cur_date == 'object' && typeof this.options.cur_date.getMonth === 'function') return this.options.cur_date;
         else return new Date();
     },
+    inline_picker: function()
+    {
+      if(this.options.inline_picker == null) return false;
+        else return this.options.inline_picker;
+    },
     week_start: function()
     {
       var p = this.options;
@@ -156,6 +161,11 @@ export default
     {
       if(this.options.cur_date == null) return new Date();
         else return this.options.cur_date;
+    },
+    vertical_offset: function()
+    {
+      if(this.options.verticalOffset == null) return 4;
+        else return this.options.verticalOffset;
     },
     month_left: function()
     {
@@ -199,6 +209,21 @@ export default
         final_date: this.final_date
       };
       return tmp;
+    },
+    picker_style: function()
+    {
+      var tmp = {};
+      if(this.inline_picker)
+      {
+        tmp.position = 'static';
+        tmp['margin-top'] = this.vertical_offset + 'px';
+      }
+      else
+      {
+        tmp.position = 'absolute';
+        tmp['z-index'] = '99';
+      }
+      return tmp;
     }
   },
   methods:
@@ -215,6 +240,7 @@ export default
       {
         this.old_start = this.start_date;
         this.old_final = this.final_date;
+        setTimeout(this.reposition,25);
       }
     },
     doApply: function()
@@ -285,6 +311,40 @@ export default
       }
       d.setFullYear(y,m,1);
       this.datum = d;
+    },
+    getLeftOfs: function(el)
+    {
+      var ol=el.offsetLeft;
+      while ((el=el.offsetParent) != null)
+        ol += el.offsetLeft;
+      return ol;
+    },
+    getTopOfs: function(el)
+    {
+      var ot=el.offsetTop;
+      while((el=el.offsetParent) != null)
+        ot += el.offsetTop;
+      return ot;
+    },
+    reposition: function()
+    {
+      if(this.$el.childElementCount > 1)
+      {
+        var sibling = this.$el.children[0], picker = this.$el.children[1],
+          left = sibling.offsetLeft, top = sibling.offsetTop + sibling.clientHeight + parseInt(this.vertical_offset),
+          wh = parseInt(window.innerHeight), bh = parseInt(document.body.clientHeight),
+          ww = parseInt(window.innerWidth), bw = parseInt(document.body.clientWidth);
+          /*
+        if ((top + parseInt(picker.clientHeight) - parseInt(document.body.scrollTop)) > (wh > bh ? wh : bh))
+          top = (parseInt(document.body.scrollTop) + bh - parseInt(picker.clientHeight) - 16);
+        if ((left + parseInt(picker.clientWidth) - parseInt(document.body.scrollLeft)) > (ww > bw ? ww : bw))
+          left = (parseInt(document.body.scrollLeft) + bw - parseInt(picker.clientWidth) - 16);
+        if (left < 1) left = "1";
+        if (top < 1) top = "1";
+        */
+        picker.style.top = top + 'px';
+        picker.style.left = left + 'px';
+      }
     }
   }
 }
@@ -299,6 +359,11 @@ $bord_radius: 4px;
      -moz-border-radius: $radius;
       -ms-border-radius: $radius;
           border-radius: $radius;
+}
+
+.picker_div
+{
+  display: table;
 }
 
 .triggerbutton
@@ -331,9 +396,7 @@ $bord_radius: 4px;
 
 .daterangepicker
 {
-  z-index: 99;
   font-family: Verdana,Arial,sans-serif;
-  position: absolute;
   padding: 5px;
   border: 1px solid #aaa;
 	@include border-radius($bord_radius);
