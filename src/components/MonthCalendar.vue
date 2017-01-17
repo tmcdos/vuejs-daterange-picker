@@ -1,15 +1,18 @@
 <template>
   <div>
     <div class="calendar-header">
-      <div title="Prev" class="prev-box" @click="doPrev">
-        <svg viewBox="0 0 32 32" width="14px" height="14px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="arrow-active">
+      <div title="Prev" class="prev-box" @click="doPrev" v-if="!(first_month && hideNavigation)">
+        <svg viewBox="0 0 32 32" width="14px" height="14px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" :class="[first_month ? 'arrow-disabled' : 'arrow-active']">
           <path d="M 16,32 C 24.836,32 32,24.836 32,16.002 32,7.164 24.836,0 16,0 7.164,0 0,7.164 0,16.002 0,24.836 7.164,32 16,32 Z M 19.936159,8.9720854 19.962432,23.075732 8.0525452,16.028273 Z" />
         </svg>
       </div>
-      <div class="calendar-title">
-        <span class="calendar-month">{{ cal_month | month_name }}</span>&nbsp;<span class="calendar-year">{{ cal_year }}</span>
+      <div class="calendar-title" v-if="!swapMonYear">
+        <span class="calendar-month">{{ month_name(cal_month) }}</span>&nbsp;<span class="calendar-year">{{ cal_year + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</span>
       </div>
-      <div title="Next" class="next-box" @click="doNext">
+      <div class="calendar-title" v-if="swapMonYear">
+        <span class="calendar-year">{{ cal_year + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</span>&nbsp;<span class="calendar-month">{{ month_name(cal_month) }}</span>
+      </div>
+      <div title="Next" class="next-box" @click="doNext" v-if="!(last_month && hideNavigation)">
         <svg viewBox="0 0 32 32" width="14px" height="14px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" :class="[last_month ? 'arrow-disabled' : 'arrow-active']">
           <path d="M 16,32 C 7.164,32 0,24.836 0,16.002 0,7.164 7.164,0 16,0 24.836,0 32,7.164 32,16.002 32,24.836 24.836,32 16,32 Z M 12.063841,8.9720854 12.037568,23.075732 23.947455,16.028273 Z" />
         </svg>
@@ -18,11 +21,13 @@
     <table class="calendar-table">
       <thead>
         <tr>
-          <th v-for="week_day in daysWeek" :class="[week_day>5 ? 'calendar-weekend' : '']"><span :title="date_name(week_day)">{{ week_day | short_day }}</span></th>
+          <th v-if="show_week">{{ week_header }}</th>
+          <th v-for="week_day in daysWeek" :class="[week_day>5 ? 'calendar-weekend' : '']"><span :title="date_name(week_day)">{{ min_day(week_day) }}</span></th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="week in weeksMonth">
+          <td v-if="show_week" class="calendar-weeks">{{ calc_week(week) }}</td>
           <td v-for="(date,idx) in makeWeek(week)" @click="selectDay(date)">
             <span :class="[date != 0 ? 'date-cell' : '', idx<5 ? '' : 'cell-weekend', cal_style(date,idx+1)]">{{ date != 0 ? date : '' }}</span>
           </td>
@@ -33,6 +38,7 @@
 </template>
 
 <script>
+import moment from 'moment'
 
 export default
 {
@@ -57,11 +63,7 @@ export default
   {
     var tmp =
     {
-			dateFormat: 'M d, yy', // displayed date format. Available formats: http://api.jqueryui.com/datepicker/#utility-formatDate
-			altFormat: 'yy-mm-dd', // submitted date format - inside JSON {"start":"...","end":"..."}
-			verticalOffset: 0, // offset of the dropdown relative to the closest edge of the trigger button
-			mirrorOnCollision: true, // reverse layout when there is not enough space on the right
-			autoFitCalendars: true, // override datepicker's numberOfMonths option in order to fit widget width
+      today: new Date(),
     };
     return tmp; // without Var there are strange unlogical syntax errors
   },
@@ -82,8 +84,8 @@ export default
     week_start: function()
     {
       var p = this.options;
-      if(p.week_start == null || p.week_start < 1 || p.week_start > 7) return 1; // 1=Monday, 7=Sunday
-        else return p.week_start;
+      if(p.firstDay == null || p.firstDay < 1 || p.firstDay > 7) return 1; // 1=Monday, 7=Sunday
+        else return p.firstDay;
     },
     // return week days ordered from Week_Start
     daysWeek: function()
@@ -105,7 +107,7 @@ export default
       return new Date(this.cal_year, 1+this.cal_month, 0).getDate();
     },
     // get day of the week for 1-st date in the month
-    first_day: function()
+    first_dow: function()
     {
       var d = this.datum;
       d.setDate(1);
@@ -118,82 +120,181 @@ export default
     {
       var max = this.month_days;
       if(max<=28) return [0,1,2,3];
-      if(max+(this.first_day-1)<=35) return [0,1,2,3,4];
+      if(max+(this.first_dow-1)<=35) return [0,1,2,3,4];
       return [0,1,2,3,4,5];
     },
-    max_today: function()
+    first_month: function()
     {
-      if(this.options.max_today == null) return true; // disable dates in the future
-        else return this.options.max_today;
+      if(this.options.minDate != null)
+      {
+        var d;
+        if(this.isDate(this.options.minDate)) d = this.options.minDate;
+        else if(typeof this.options.minDate == 'number')
+        {
+          if(this.options.minDate < 0) d = this.moment().subtract(-this.options.minDate,'days').toDate();
+            else d = this.moment().add(this.options.minDate,'days').toDate();
+        }
+        else if(typeof this.options.minDate == 'string')
+        {
+          // either dateFormat value,
+
+          // or relative date (value + period pairs)
+
+        }
+        var y = d.getFullYear();
+        if(this.cal_year < y) return true;
+        if(this.cal_year == y && this.cal_month <= d.getMonth()) return true;
+      }
+      return false;
     },
     last_month: function()
     {
-      if(this.max_today)
+      if(this.options.maxDate != null)
       {
-        var d = new Date(), y = d.getFullYear();
+        var d;
+        if(this.isDate(this.options.maxDate)) d = this.options.maxDate;
+        else if(typeof this.options.maxDate == 'number')
+        {
+          if(this.options.maxDate < 0) d = this.moment().subtract(-this.options.maxDate,'days').toDate();
+            else d = this.moment().add(this.options.maxDate,'days').toDate();
+        }
+        else if(typeof this.options.maxDate == 'string')
+        {
+          // either dateFormat value,
+
+          // or relative date (value + period pairs)
+
+        }
+        var y = d.getFullYear();
         if(this.cal_year > y) return true;
         if(this.cal_year == y && this.cal_month >= d.getMonth()) return true;
       }
       return false;
     },
-  },
-  filters:
-  {
-    // full name of the month
-    month_name: function(m)
+    swapMonYear: function()
     {
-      switch(m)
-      {
-        case 0: return 'January';
-        case 1: return 'February';
-        case 2: return 'March';
-        case 3: return 'April';
-        case 4: return 'May';
-        case 5: return 'June';
-        case 6: return 'July';
-        case 7: return 'August';
-        case 8: return 'September';
-        case 9: return 'October';
-        case 10: return 'November';
-        case 11: return 'December';
-      }
+      if(this.options.showMonthAfterYear != null) return this.options.showMonthAfterYear;
+        else return false;
     },
-    // minimized names of the week days
-    short_day: function(w)
+    hideNavigation: function()
     {
-      switch(w)
-      {
-        case 1: return 'Mo';
-        case 2: return 'Tu';
-        case 3: return 'We';
-        case 4: return 'Th';
-        case 5: return 'Fr';
-        case 6: return 'Sa';
-        case 7: return 'Su';
-        default: return '';
-      }
+      if(this.options.hideIfNoPrevNext != null) return this.options.hideIfNoPrevNext;
+        else return false;
+    },
+    year_suffix: function()
+    {
+      if(this.options.yearSuffix != null) return this.options.yearSuffix;
+        else return '';
+    },
+    show_week: function()
+    {
+      if(this.options.showWeek != null) return this.options.showWeek;
+        else return false;
+    },
+    week_header: function()
+    {
+      if(this.options.weekHeader != null) return this.options.weekHeader;
+        else return 'Wk';
     }
   },
   methods:
   {
+    // inject the Moment.JS
+    moment: function(x)
+    {
+      return moment(x);
+    },
     // wrap around days of the week
     week_mod: function(x)
     {
       return (x<=7 ? x : x - 7);
     },
+    // full name of the month
+    month_name: function(m)
+    {
+      var lst = this.options.monthNames;
+      switch(m)
+      {
+        case 0: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'January';
+        case 1: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'February';
+        case 2: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'March';
+        case 3: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'April';
+        case 4: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'May';
+        case 5: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'June';
+        case 6: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'July';
+        case 7: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'August';
+        case 8: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'September';
+        case 9: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'October';
+        case 10: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'November';
+        case 11: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'December';
+        default: return 'N/A';
+      }
+    },
+    month_short: function(m)
+    {
+      var lst = this.options.monthNamesShort;
+      switch(m)
+      {
+        case 0: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Jan';
+        case 1: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Feb';
+        case 2: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Mar';
+        case 3: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Apr';
+        case 4: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'May';
+        case 5: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Jun';
+        case 6: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Jul';
+        case 7: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Aug';
+        case 8: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Sep';
+        case 9: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Oct';
+        case 10: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Nov';
+        case 11: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Dec';
+        default: return 'N/A';
+      }
+    },
+    // minimized names of the week days
+    min_day: function(w)
+    {
+      var lst = this.options.dayNamesMin;
+      switch(w)
+      {
+        case 1: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Mo';
+        case 2: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Tu';
+        case 3: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'We';
+        case 4: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Th';
+        case 5: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Fr';
+        case 6: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Sa';
+        case 7: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Su';
+        default: return 'N/A';
+      }
+    },
+    short_day: function(w)
+    {
+      var lst = this.options.dayNamesShort;
+      switch(w)
+      {
+        case 1: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Mon';
+        case 2: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Tue';
+        case 3: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Wed';
+        case 4: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Thu';
+        case 5: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Fri';
+        case 6: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Sat';
+        case 7: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Sun';
+        default: return 'N/A';
+      }
+    },
     // full name of the week day
     date_name: function(w)
     {
+      var lst = this.options.dayNames;
       switch(w)
       {
-        case 1: return 'Monday';
-        case 2: return 'Tuedays';
-        case 3: return 'Wednesday';
-        case 4: return 'Thursday';
-        case 5: return 'Friday';
-        case 6: return 'Saturday';
-        case 7: return 'Sunday';
-        default: return '';
+        case 1: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Monday';
+        case 2: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Tuesday';
+        case 3: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Wednesday';
+        case 4: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Thursday';
+        case 5: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Friday';
+        case 6: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Saturday';
+        case 7: return (lst != null && isArray(lst) && typeof lst[m] =='string' && lst[m] != '') ? lst[m] : 'Sunday';
+        default: return 'N/A';
       }
     },
     // emit event when user clicks on a date
@@ -210,17 +311,24 @@ export default
     },
     is_today: function(mday)
     {
-      var d = new Date();
-      return (this.cal_year == d.getFullYear() && this.cal_month == d.getMonth() && mday == d.getDate());
+      return (this.cal_year == this.today.getFullYear() && this.cal_month == this.today.getMonth() && mday == this.today.getDate());
     },
     is_disabled: function(mday)
     {
-      var d = new Date(), y = d.getFullYear(), m = d.getMonth();
-      if(this.max_today)
+      var d_min = this.options.minDate, d_max = this.options.maxDate;
+      if(d_max != null && this.isDate(d_max))
       {
+        var y = d_max.getFullYear(), m = d_max.getMonth()
         if(this.cal_year > y) return true;
         if(this.cal_year == y && this.cal_month > m) return true;
-        if(this.cal_year == y && this.cal_month == m && mday > d.getDate()) return true;
+        if(this.cal_year == y && this.cal_month == m && mday > d_max.getDate()) return true;
+      }
+      if(d_min != null && this.isDate(d_min))
+      {
+        var y = d_min.getFullYear(), m = d_min.getMonth()
+        if(this.cal_year < y) return true;
+        if(this.cal_year == y && this.cal_month < m) return true;
+        if(this.cal_year == y && this.cal_month == m && mday < d_min.getDate()) return true;
       }
       return false;
     },
@@ -229,7 +337,8 @@ export default
     // dow = day of the week (1-7)
     cal_style: function(mday,dow)
     {
-      // selection has highest priority
+      if(this.is_disabled(mday)) return 'disabled-cell';
+      // selection has higher priority
       if(this.options.start_date != null)
       {
         var s = this.options.start_date;
@@ -290,14 +399,13 @@ export default
         }
       }
       if(this.is_today(mday)) return 'today-cell';
-      if(this.is_disabled(mday)) return 'disabled-cell';
       return 'any-cell';
     },
     // returns array of the month dates for the given week (0-5) in the month
     // if an element is 0 - it is not shown (replaced with whitespace)
     makeWeek: function(w)
     {
-      var start = this.first_day, max = this.month_days, day = 7*w - (start-1) + 1;
+      var start = this.first_dow, max = this.month_days, day = 7*w - (start-1) + 1;
       var res =
       [
         day   > max ? 0 : (day   < 1 ? 0 : day),
@@ -310,9 +418,24 @@ export default
       ];
       return res;
     },
+    // calculates the week of the year for a given week of the month
+    // by default uses ISO-8601 (weeks start on Monday, 1-st week of year contains the 1-st Thursday)
+    calc_week: function(w)
+    {
+      if(typeof this.options.calculateWeek == 'function') return this.options.calculateWeek(new Date(this.cal_year, this.cal_month, 1 + 7*w));
+        else return this.moment(new Date(this.cal_year, this.cal_month, 1 + 7*w)).isoWeek();
+    },
+    isDate: function(d)
+    {
+      return Object.prototype.toString.call(d) === '[object Date]';
+    },
+    isArray: function(a)
+    {
+      return Object.prototype.toString.call(a) === '[object Array]';
+    },
     doPrev: function()
     {
-      this.$emit('onPrev');
+      if(!this.first_month) this.$emit('onPrev');
     },
     doNext: function()
     {
@@ -448,6 +571,11 @@ $bord_radius: 4px;
 .calendar-weekend
 {
   color: red;
+}
+
+td.calendar-weeks
+{
+  text-align: center;
 }
 
 .date-cell

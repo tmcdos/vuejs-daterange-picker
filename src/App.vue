@@ -15,14 +15,15 @@
 				</p>
 				<p>and turn it into:</p>
 				<p>
-					<date-picker :options="{inline_picker:true, start_date: start, final_date: final}"></date-picker>
+					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, 
+					    minDate:minimal, hideIfNoPrevNext:true, stepMonths:2, yearSuffix:'CE', showWeek:true}"></date-picker>
 				</p>
 			</div>
 			<div class="col-md-8">
 				<h3>Example Code</h3>
         <pre>
 					<code class="html">
-&lt;date-picker v-bind:options="{inline_picker:true, start_date: start, final_date: final}"&gt;&lt;/date-picker&gt;
+&lt;date-picker v-bind:options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, minDate:minimal, hideIfNoPrevNext:true, stepMonths:2, yearSuffix:'CE', showWeek:true}"&gt;&lt;/date-picker&gt;
 
 &lt;script&gt;
 export default 
@@ -30,15 +31,17 @@ export default
   name: 'app',
   data () 
   {
-    return {start:null,final:null};
+    return {start:null,final:null, minimal:null};
   },
   created ()
   {
-    var ds = new Date(), df = new Date();
+    var ds = new Date(), df = new Date(), md = new Date();
     ds.setFullYear(2016,10,5);
     df.setFullYear(2016,11,20);
+    md.setFullYear(2016,10,20);
     this.start = ds;
     this.final = df;
+    this.minimal = md;
   },
   methods:
   {
@@ -60,15 +63,17 @@ export default
   name: 'app',
   data () 
   {
-    return {start:null,final:null};
+    return {start:null,final:null, minimal:null};
   },
   created ()
   {
-		var ds = new Date(), df = new Date();
-		ds.setFullYear(2016,10,5);
-		df.setFullYear(2016,11,20);
+    var ds = new Date(), df = new Date(), md = new Date();
+    ds.setFullYear(2016,10,5);
+    df.setFullYear(2016,11,20);
+		md.setFullYear(2016,10,20);
     this.start = ds;
-		this.final = df;
+    this.final = df;
+    this.minimal = md;
   },
   methods:
   {

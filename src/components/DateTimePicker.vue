@@ -63,20 +63,14 @@ export default
   {
     var tmp =
     {
-			dateFormat: 'M d, yy', // displayed date format. Available formats: http://api.jqueryui.com/datepicker/#utility-formatDate
-			altFormat: 'yy-mm-dd', // submitted date format - inside JSON {"start":"...","end":"..."}
-			verticalOffset: 0, // offset of the dropdown relative to the closest edge of the trigger button
-			mirrorOnCollision: true, // reverse layout when there is not enough space on the right
-			autoFitCalendars: true, // override datepicker's numberOfMonths option in order to fit widget width
       is_opened: false,
       pos_x: 200,
       pos_y: 200,
       datum: null,
-      start_date: this.options.start_date,
-      final_date: this.options.final_date,
+      start_date: this.options.startDate,
+      final_date: this.options.finalDate,
       old_start: null,
       old_final: null,
-      state: 0, // the state of the finite automata
     };
     return tmp; // without Var there are strange unlogical syntax errors
   },
@@ -94,20 +88,20 @@ export default
     txt_apply: function()
     {
       // use "" to get rid of the button
-      if(this.options.apply_text == null) return 'Apply';
-        else return this.options.apply_text;
+      if(this.options.applyButtonText == null) return 'Apply';
+        else return this.options.applyButtonText;
     },
     txt_clear: function()
     {
       // use "" to get rid of the button
-      if(this.options.clear_text == null) return 'Clear';
-        else return this.options.clear_text;
+      if(this.options.clearButtonText == null) return 'Clear';
+        else return this.options.clearButtonText;
     },
     txt_cancel: function()
     {
       // use "" to get rid of the button
-      if(this.options.cancel_text == null) return 'Cancel';
-        else return this.options.cancel_text;
+      if(this.options.cancelButtonText == null) return 'Cancel';
+        else return this.options.cancelButtonText;
     },
     placeholder: function()
     {
@@ -115,35 +109,24 @@ export default
       if(this.start_date != null && this.final_date != null) return this.rangeText;
       else
       {
-        if(this.options.placeholder == null) return 'Select date range...';
-          else return this.options.placeholder;
+        if(this.options.initialText == null) return 'Select date range...';
+          else return this.options.initialText;
       }
     },
     month_cnt: function()
     {
-      if(this.options.number_months == null) return 3;
-        else return this.options.number_months;
-    },
-    max_today: function()
-    {
-      if(this.options.max_today == null) return true; // disable dates in the future
-        else return this.options.max_today;
+      if(this.options.numberOfMonths == null) return 3;
+        else return this.options.numberOfMonths;
     },
     cur_date: function()
     {
-      if(typeof this.options.cur_date == 'object' && typeof this.options.cur_date.getMonth === 'function') return this.options.cur_date;
+      if(this.isDate(this.options.cur_date)) return this.options.cur_date;
         else return new Date();
     },
     inline_picker: function()
     {
-      if(this.options.inline_picker == null) return false;
-        else return this.options.inline_picker;
-    },
-    week_start: function()
-    {
-      var p = this.options;
-      if(p.week_start == null || p.week_start < 1 || p.week_start > 7) return 1; // 1=Monday, 7=Sunday
-        else return p.week_start;
+      if(this.options.inlinePicker == null) return false;
+        else return this.options.inlinePicker;
     },
     // expects non-NULL period
     rangeText: function()
@@ -203,10 +186,21 @@ export default
     {
       var tmp =
       {
-        max_today: this.max_today,
-        week_start: this.week_start,
         start_date: this.start_date,
-        final_date: this.final_date
+        final_date: this.final_date,
+        maxDate: this.options.maxDate,
+        minDate: this.options.minDate,
+        firstDay: this.options.firstDay,
+        showWeek: this.options.showWeek,
+        yearSuffix: this.options.yearSuffix,
+        dayNames: this.options.dayNames,
+        dayNamesMin: this.options.dayNamesMin,
+        dayNamesShort: this.options.dayNamesShort,
+        monthNames: this.options.monthNames,
+        monthNamesShort: this.options.monthNamesShort,
+        calculateWeek: this.options.calculateWeek,
+        hideIfNoPrevNext: this.options.hideIfNoPrevNext,
+        showMonthAfterYear: this.options.showMonthAfterYear,
       };
       return tmp;
     },
@@ -270,28 +264,29 @@ export default
     },
     doSelect: function(d) // receives a Date() object with zeroed time part
     {
-      switch(this.state)
+      if((this.start_date == null) == (this.final_date == null))
       {
-        case 0: // 1-st click
+        // 1-st click
+        this.start_date = d;
+        this.final_date = null;
+      }
+      else
+      {
+        // 2-nd click
+        if(this.start_date <= d) this.final_date = d;
+        else
+        {
+          this.final_date = this.start_date;
           this.start_date = d;
-          this.final_date = null;
-          this.state = 1;
-          break;
-        case 1: // 2-nd click
-          if(this.start_date <= d) this.final_date = d;
-          else
-          {
-            this.final_date = this.start_date;
-            this.start_date = d;
-          }
-          this.state = 0;
-          break;
+        }
       }
     },
     doPrev: function()
     {
-      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth();
-      m--;
+      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth(), step = this.options.stepMonths;
+      if(step == null || isNaN(step)) step = 1;
+      if(step > 12) step = 12;
+      m -= step;
       if(m<0)
       {
         m += 12;
@@ -302,8 +297,10 @@ export default
     },
     doNext: function()
     {
-      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth();
-      m++;
+      var d = new Date(), y = this.datum.getFullYear(), m = this.datum.getMonth(), step = this.options.stepMonths;
+      if(step == null || isNaN(step)) step = 1;
+      if(step > 12) step = 12;
+      m += step;
       if(m>11)
       {
         m -= 12;
@@ -325,6 +322,14 @@ export default
       while((el=el.offsetParent) != null)
         ot += el.offsetTop;
       return ot;
+    },
+    isDate: function(d)
+    {
+      return Object.prototype.toString.call(d) === '[object Date]';
+    },
+    isArray: function(a)
+    {
+      return Object.prototype.toString.call(a) === '[object Array]';
     },
     reposition: function()
     {

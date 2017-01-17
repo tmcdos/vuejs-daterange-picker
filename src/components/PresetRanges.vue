@@ -5,13 +5,13 @@
         <span class="menu-item-text" tabindex="-1" role="menuitem">{{ preset.text }}</span>
       </li>
     </ul>
-  </div> 
+  </div>
 </template>
 
 <script>
 import moment from 'moment'
 
-export default 
+export default
 {
   name: 'preset-ranges',
   props:
@@ -22,97 +22,97 @@ export default
       default: null
     }
   },
-  data: function() 
+  data: function()
   {
     var tmp =
     {
       preset_ranges: [],
 			preset_prefix: 'preset-ui-',
-      preset_focus: '', // which of the presets on the left panel is currently under mouse 
+      preset_focus: '', // which of the presets on the left panel is currently under mouse
     };
     return tmp; // without Var there are strange unlogical syntax errors
   },
   created: function()
   {
     if(this.presets != null) this.preset_ranges = this.presets;
-    else this.preset_ranges = 
+    else this.preset_ranges =
 		[
 			{
-			  text: 'Today', 
-			  dateStart: function() 
-			  { 
+			  text: 'Today',
+			  dateStart: function()
+			  {
 			    return moment().toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
+			  },
+			  dateEnd: function()
+			  {
 			    return moment().toDate();
-			  } 
+			  }
 			},
 			{
-			  text: 'Yesterday', 
-			  dateStart: function() 
-			  { 
-			    return moment().subtract('days', 1).toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
-			    return moment().subtract('days', 1).toDate();
-			  } 
+			  text: 'Yesterday',
+			  dateStart: function()
+			  {
+			    return moment().subtract(1,'days').toDate();
+			  },
+			  dateEnd: function()
+			  {
+			    return moment().subtract(1,'days').toDate();
+			  }
 			},
 			{
-			  text: 'Last 7 Days', 
-			  dateStart: function() 
-			  { 
-			    return moment().subtract('days', 6).toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
+			  text: 'Last 7 Days',
+			  dateStart: function()
+			  {
+			    return moment().subtract(6,'days').toDate();
+			  },
+			  dateEnd: function()
+			  {
 			    return moment().toDate();
-			  } 
+			  }
 			},
 			{
-			  text: 'Last Week (Mo-Su)', 
-			  dateStart: function() 
-			  { 
-			    return moment().subtract('days', 7).isoWeekday(1).toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
-			    return moment().subtract('days', 7).isoWeekday(7).toDate();
-			  } 
+			  text: 'Last Week (Mo-Su)',
+			  dateStart: function()
+			  {
+			    return moment().subtract(7,'days').isoWeekday(1).toDate();
+			  },
+			  dateEnd: function()
+			  {
+			    return moment().subtract(7,'days').isoWeekday(7).toDate();
+			  }
 			},
 			{
-			  text: 'Month to Date', 
-			  dateStart: function() 
-			  { 
+			  text: 'Month to Date',
+			  dateStart: function()
+			  {
 			    return moment().startOf('month').toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
+			  },
+			  dateEnd: function()
+			  {
 			    return moment().toDate();
-			  } 
+			  }
 			},
 			{
-			  text: 'Previous Month', 
-			  dateStart: function() 
-			  { 
-			    return moment().subtract('month', 1).startOf('month').toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
-			    return moment().subtract('month', 1).endOf('month').toDate();
-			  } 
+			  text: 'Previous Month',
+			  dateStart: function()
+			  {
+			    return moment().subtract(1,'month').startOf('month').toDate();
+			  },
+			  dateEnd: function()
+			  {
+			    return moment().subtract(1,'month').endOf('month').toDate();
+			  }
 			},
 			{
-			  text: 'Year to Date', 
-			  dateStart: function() 
-			  { 
+			  text: 'Year to Date',
+			  dateStart: function()
+			  {
 			    return moment().startOf('year').toDate();
-			  }, 
-			  dateEnd: function() 
-			  { 
+			  },
+			  dateEnd: function()
+			  {
 			    return moment().toDate();
-			  } 
+			  }
 			}
 		];
   },
@@ -147,7 +147,7 @@ $bord_radius: 4px;
   -webkit-border-radius: $radius;
      -moz-border-radius: $radius;
       -ms-border-radius: $radius;
-          border-radius: $radius;  
+          border-radius: $radius;
 }
 
 .presets
@@ -155,7 +155,7 @@ $bord_radius: 4px;
   border-right: 1px solid #aaa;
   display: table-cell;
   vertical-align: top;
-  padding: 2px 7px 7px 2px;  
+  padding: 2px 7px 7px 2px;
 }
 
 .ui-menu
@@ -165,7 +165,7 @@ $bord_radius: 4px;
   padding: 2px;
   margin: 0;
   display: block;
-  outline: 0;  
+  outline: 0;
 }
 
 .ui-menu-item
