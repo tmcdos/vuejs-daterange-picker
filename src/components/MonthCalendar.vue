@@ -127,7 +127,7 @@ export default
     {
       if(this.options.minDate != null)
       {
-        var d;
+        var d = new Date();
         if(this.isDate(this.options.minDate)) d = this.options.minDate;
         else if(typeof this.options.minDate == 'number')
         {
@@ -136,10 +136,8 @@ export default
         }
         else if(typeof this.options.minDate == 'string')
         {
-          // either dateFormat value,
-
-          // or relative date (value + period pairs)
-
+          // relative date (value + period pairs)
+          d = this.relDate(this.options.minDate);
         }
         var y = d.getFullYear();
         if(this.cal_year < y) return true;
@@ -151,7 +149,7 @@ export default
     {
       if(this.options.maxDate != null)
       {
-        var d;
+        var d = new Date();
         if(this.isDate(this.options.maxDate)) d = this.options.maxDate;
         else if(typeof this.options.maxDate == 'number')
         {
@@ -160,10 +158,8 @@ export default
         }
         else if(typeof this.options.maxDate == 'string')
         {
-          // either dateFormat value,
-
-          // or relative date (value + period pairs)
-
+          // relative date (value + period pairs)
+          d = this.relDate(this.options.maxDate);
         }
         var y = d.getFullYear();
         if(this.cal_year > y) return true;
@@ -424,6 +420,23 @@ export default
     {
       if(typeof this.options.calculateWeek == 'function') return this.options.calculateWeek(new Date(this.cal_year, this.cal_month, 1 + 7*w));
         else return this.moment(new Date(this.cal_year, this.cal_month, 1 + 7*w)).isoWeek();
+    },
+    relDate: function(val)
+    {
+      var i, duration, d = this.moment(), t = val.match(/0|[+\-]\d+[dmwy]/ig);
+      if(t != null && t.length) for(i=0; i<t.length; i++)
+      {
+        if(t[i]=="0") continue;
+        let x = t[i].match(/([+\-]\d+)([dmwy])/);
+        if(x != null && x.length == 3)
+        {
+          duration = parseInt(x[1]);
+          if(isNaN(duration)) continue;
+          if(duration < 0) d = d.subtract(duration,x[2]);
+          else d = d.add(duration,x[2]);
+        }
+      }
+      return d.toDate();
     },
     isDate: function(d)
     {
