@@ -22,7 +22,7 @@
       <thead>
         <tr>
           <th v-if="show_week">{{ week_header }}</th>
-          <th v-for="week_day in daysWeek" :class="[week_day>5 ? 'calendar-weekend' : '']"><span :title="date_name(week_day)">{{ min_day(week_day) }}</span></th>
+          <th v-for="week_day in daysWeek" :class="[is_weekend(week_day) ? 'calendar-weekend' : '']"><span :title="date_name(week_day)">{{ min_day(week_day) }}</span></th>
         </tr>
       </thead>
       <tbody>

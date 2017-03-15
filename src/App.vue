@@ -15,7 +15,7 @@
 				</p>
 				<p>and turn it into:</p>
 				<p>
-					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true,
+					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:false,
 					    minDate:minimal, hideIfNoPrevNext:true, stepMonths:1, showWeek:true, showOtherMonths:true, selectOtherMonths:true}"></date-picker>
 				</p>
 			</div>
