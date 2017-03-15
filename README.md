@@ -52,6 +52,8 @@ Explanation of options:
 | showMonthAfterYear | Boolean | `False` | Whether to show the month after the year in the header (default is before) |
 | showWeek | Boolean | `False` | When **True**, a column is added to show the week of the year. The `calculateWeek` option determines how the week of the year is calculated |
 | weekHeader | String | `Wk` | The text to display for the week of the year column heading. Use the `showWeek` option to display this column |
+| showOtherMonths | Boolean | `False` | When **True**, first and last weeks of the given month are not clipped and include dates from previous and next month so that weeks always contain full 7 days |
+| selectOtherMonths | Boolean | `False` | Only effective if `showOtherMonths` is **True**. When **True**, dates injected from the adjacent months in first and last week of the given month are selectable/clickable - otherwise disabled |
 | monthNames | Array of String | English names | The list of full month names |
 | monthNamesShort | Array of String | 3-letter English names | The list of abbreviated month names for use in month headers |
 | dayNames | Array of String | English names | The list of the full weekday names ordered from Monday to Sunday |
