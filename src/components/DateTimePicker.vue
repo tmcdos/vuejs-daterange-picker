@@ -77,6 +77,33 @@ export default
   created: function()
   {
     this.datum = this.cur_date;
+    var min = this.options.minDate, max = this.options.maxDate;
+    if(min != null && max != null)
+    {
+      // check if maxDate is bigger than minDate
+      if(max > min)
+      {
+        var tmp = this.options.maxDate;
+        this.options.maxDate = this.options.minDate;
+        this.options.minDate = tmp;
+      }
+    }
+    if(this.start_date != null)
+    {
+      // ensure range start is inside the limitations
+      if(min != null)
+      {
+        if(this.start_date < min) this.start_date = min;
+      }
+    }
+    if(this.final_date != null)
+    {
+      // ensure range end is inside the limitations
+      if(max != null)
+      {
+        if(this.final_date > max) this.final_date = max;
+      }
+    }
   },
   computed:
   {
@@ -186,21 +213,23 @@ export default
     {
       var tmp =
       {
-        start_date: this.start_date,
-        final_date: this.final_date,
-        maxDate: this.options.maxDate,
-        minDate: this.options.minDate,
-        firstDay: this.options.firstDay,
-        showWeek: this.options.showWeek,
-        yearSuffix: this.options.yearSuffix,
-        dayNames: this.options.dayNames,
-        dayNamesMin: this.options.dayNamesMin,
-        dayNamesShort: this.options.dayNamesShort,
-        monthNames: this.options.monthNames,
-        monthNamesShort: this.options.monthNamesShort,
-        calculateWeek: this.options.calculateWeek,
-        hideIfNoPrevNext: this.options.hideIfNoPrevNext,
-        showMonthAfterYear: this.options.showMonthAfterYear,
+        start_date: this.start_date, // start of the currently selected date range
+        final_date: this.final_date, // end of the currently selected date range
+        maxDate: this.options.maxDate, // upper limit for the calendar
+        minDate: this.options.minDate, // lower limit for the calendar
+        firstDay: this.options.firstDay, // 1-7, which is the first day of the week
+        showWeek: this.options.showWeek, // week of the year on the left
+        showOtherMonths: this.options.showOtherMonths, // dates from next/prev month are shown to ensure all weeks have 7 days
+        selectOtherMonths: this.options.selectOtherMonths, // allow selecting if "showOtherMonths" is TRUE
+        yearSuffix: this.options.yearSuffix, // e.g. AC or BC
+        dayNames: this.options.dayNames, // array with full names of week days
+        dayNamesMin: this.options.dayNamesMin, // array with 2-letter names of week days
+        dayNamesShort: this.options.dayNamesShort, // array with 3-letter names of week days
+        monthNames: this.options.monthNames, // array with full month names
+        monthNamesShort: this.options.monthNamesShort, // array with 3-letter month names
+        calculateWeek: this.options.calculateWeek, // optional user-provided function
+        hideIfNoPrevNext: this.options.hideIfNoPrevNext, // hide navigation arrows
+        showMonthAfterYear: this.options.showMonthAfterYear, // otherwise year is after month
       };
       return tmp;
     },

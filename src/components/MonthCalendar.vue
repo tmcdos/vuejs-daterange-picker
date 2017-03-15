@@ -29,7 +29,7 @@
         <tr v-for="week in weeksMonth">
           <td v-if="show_week" class="calendar-weeks">{{ calc_week(week) }}</td>
           <td v-for="(date,idx) in makeWeek(week)" @click="selectDay(date)">
-            <span :class="[date != 0 ? 'date-cell' : '', idx<5 ? '' : 'cell-weekend', cal_style(date,idx+1)]">{{ date != 0 ? date : '' }}</span>
+            <span :class="[date != 0 ? 'date-cell' : '', is_weekend(idx+1) ? 'cell-weekend' : '', cal_style(date,idx+1)]">{{ date != 0 ? Math.abs(date) : '' }}</span>
           </td>
         </tr>
       </tbody>
@@ -106,6 +106,11 @@ export default
     {
       return new Date(this.cal_year, 1+this.cal_month, 0).getDate();
     },
+    // get number of days in the previous month
+    month_days_prev: function()
+    {
+      return new Date(this.cal_year, this.cal_month, 0).getDate();
+    },
     // get day of the week for 1-st date in the month
     first_dow: function()
     {
@@ -115,14 +120,34 @@ export default
       if(start==0) start = 7;
       return start;
     },
+    // get day of the week for 1-st date in the previous month
+    first_dow_prev: function()
+    {
+      var d = new Date(this.cal_year, 1+this.cal_month, 0);
+      d.setMonth(-1);
+      var start = d.getDay();
+      if(start==0) start = 7;
+      return start;
+    },
     // how many weeks spans the current month
     weeksMonth: function()
     {
-      var max = this.month_days;
-      if(max<=28) return [0,1,2,3];
-      if(max+(this.first_dow-1)<=35) return [0,1,2,3,4];
+      var max = this.month_days, dow = this.first_dow;
+      if(max<28) return [0,1,2,3];
+      if(max==28 && dow==1) return [0,1,2,3];
+      if(max+(dow-1)<=35) return [0,1,2,3,4];
       return [0,1,2,3,4,5];
     },
+    // how many weeks spans the previous month
+    weeksMonthPrev: function()
+    {
+      var max = this.month_days_prev, dow = this.first_dow_prev;
+      if(max<28) return [0,1,2,3];
+      if(max==28 && dow==1) return [0,1,2,3];
+      if(max+(this.first_dow_prev-1)<=35) return [0,1,2,3,4];
+      return [0,1,2,3,4,5];
+    },
+    // check if current month is limited on the left
     first_month: function()
     {
       if(this.options.minDate != null)
@@ -145,6 +170,7 @@ export default
       }
       return false;
     },
+    // check if current month is limited on the right
     last_month: function()
     {
       if(this.options.maxDate != null)
@@ -191,6 +217,16 @@ export default
     {
       if(this.options.weekHeader != null) return this.options.weekHeader;
         else return 'Wk';
+    },
+    show_other_month: function()
+    {
+      if(this.options.showOtherMonths != null) return this.options.showOtherMonths;
+        else return false;
+    },
+    select_other_month: function()
+    {
+      if(this.options.selectOtherMonths != null) return this.options.selectOtherMonths;
+      else return false;
     }
   },
   methods:
@@ -296,9 +332,14 @@ export default
     // emit event when user clicks on a date
     selectDay: function(val)
     {
-      if(this.is_disabled(val)) return;
+      if(this.is_disabled(val) || (val<0 && !this.select_other_month)) return;
       var d = new Date();
-      d.setFullYear(this.cal_year, this.cal_month, val);
+      if(val<0)
+      {
+        if(val>-10) d.setFullYear(this.cal_year, 1+this.cal_month, Math.abs(val));
+          else d.setFullYear(this.cal_year, this.cal_month-1, Math.abs(val));
+      }
+      else d.setFullYear(this.cal_year, this.cal_month, val);
       d.setHours(0);
       d.setMinutes(0);
       d.setSeconds(0);
@@ -311,20 +352,61 @@ export default
     },
     is_disabled: function(mday)
     {
-      var d_min = this.options.minDate, d_max = this.options.maxDate;
+      var d_min = this.options.minDate, d_max = this.options.maxDate, d = new Date();
+      if(mday<0)
+      {
+        if(mday>-10) d.setFullYear(this.cal_year, 1+this.cal_month, Math.abs(mday));
+        else d.setFullYear(this.cal_year, this.cal_month-1, Math.abs(mday));
+      }
+      else d.setFullYear(this.cal_year, this.cal_month, mday);
+      d.setHours(0);
+      d.setMinutes(0);
+      d.setSeconds(0);
+      d.setMilliseconds(0);
       if(d_max != null && this.isDate(d_max))
       {
-        var y = d_max.getFullYear(), m = d_max.getMonth()
-        if(this.cal_year > y) return true;
-        if(this.cal_year == y && this.cal_month > m) return true;
-        if(this.cal_year == y && this.cal_month == m && mday > d_max.getDate()) return true;
+        d_max.setHours(23);
+        d_max.setMinutes(59);
+        d_max.setSeconds(59);
+        d_max.setMilliseconds(999);
+        if(d > d_max) return true;
       }
       if(d_min != null && this.isDate(d_min))
       {
-        var y = d_min.getFullYear(), m = d_min.getMonth()
-        if(this.cal_year < y) return true;
-        if(this.cal_year == y && this.cal_month < m) return true;
-        if(this.cal_year == y && this.cal_month == m && mday < d_min.getDate()) return true;
+        d_min.setHours(0);
+        d_min.setMinutes(0);
+        d_min.setSeconds(0);
+        d_min.setMilliseconds(0);
+        if(d < d_min) return true;
+      }
+      return false;
+    },
+    // different CSS class for weekends
+    is_weekend(dow)
+    {
+      switch(this.week_start)
+      {
+        case 1: // 1,2,3,4,5,6,7
+          return (dow>5);
+          break;
+        case 2: // 2,3,4,5,6,7,1
+          return (dow==5 || dow==6);
+          break;
+        case 3: // 3,4,5,6,7,1,2
+          return (dow==4 || dow==5);
+          break;
+        case 4: // 4,5,6,7,1,2,3
+          return (dow==3 || dow==4);
+          break;
+        case 5: // 5,6,7,1,2,3,4
+          return (dow==2 || dow==3);
+          break;
+        case 6: // 6,7,1,2,3,4,5
+          return (dow==1 || dow==2);
+          break;
+        case 7: // 7,1,2,3,4,5,6
+          return (dow==1 || dow==7);
+          break;
       }
       return false;
     },
@@ -333,7 +415,6 @@ export default
     // dow = day of the week (1-7)
     cal_style: function(mday,dow)
     {
-      if(this.is_disabled(mday)) return 'disabled-cell';
       // selection has higher priority
       if(this.options.start_date != null)
       {
@@ -359,7 +440,7 @@ export default
                   if(this.cal_month < m2) return 'period';
                   if(this.cal_month == m2)
                   {
-                    if(mday <= d2) return 'period';
+                    if(mday <= d2 && mday>0) return 'period';
                   }
                 }
             }
@@ -374,7 +455,7 @@ export default
                   if(this.cal_month < m2) return 'period';
                   if(this.cal_month == m2)
                   {
-                    if(mday <= d2) return 'period';
+                    if(mday <= d2 && mday>0) return 'period';
                   }
                 }
               }
@@ -388,30 +469,45 @@ export default
                   if(this.cal_month < m2) return 'period';
                   if(this.cal_month == m2)
                   {
-                    if(mday <= d2) return 'period';
+                    if(mday <= d2 && mday>0) return 'period';
                   }
                 }
           }
         }
       }
-      if(this.is_today(mday)) return 'today-cell';
+      if(mday>0 && this.is_today(mday)) return 'today-cell';
+      if(this.is_disabled(mday)) return 'disabled-cell';
+      if(mday<0 && !this.select_other_month) return 'disabled-cell';
       return 'any-cell';
     },
     // returns array of the month dates for the given week (0-5) in the month
     // if an element is 0 - it is not shown (replaced with whitespace)
     makeWeek: function(w)
     {
-      var start = this.first_dow, max = this.month_days, day = 7*w - (start-1) + 1;
-      var res =
-      [
-        day   > max ? 0 : (day   < 1 ? 0 : day),
-        day+1 > max ? 0 : (day+1 < 1 ? 0 : day+1),
-        day+2 > max ? 0 : (day+2 < 1 ? 0 : day+2),
-        day+3 > max ? 0 : (day+3 < 1 ? 0 : day+3),
-        day+4 > max ? 0 : (day+4 < 1 ? 0 : day+4),
-        day+5 > max ? 0 : (day+5 < 1 ? 0 : day+5),
-        day+6 > max ? 0 : (day+6 < 1 ? 0 : day+6),
-      ];
+      var res, other_prev = - (this.month_days_prev - (this.first_dow - 1) + 1),
+        other_next = -1, max = this.month_days, day = 7*w - (this.first_dow - 1) + 1;
+      if(this.show_other_month)
+        res =
+        [
+          day   > max ? other_next-- : (day   < 1 ? other_prev-- : day),
+          day+1 > max ? other_next-- : (day+1 < 1 ? other_prev-- : day+1),
+          day+2 > max ? other_next-- : (day+2 < 1 ? other_prev-- : day+2),
+          day+3 > max ? other_next-- : (day+3 < 1 ? other_prev-- : day+3),
+          day+4 > max ? other_next-- : (day+4 < 1 ? other_prev-- : day+4),
+          day+5 > max ? other_next-- : (day+5 < 1 ? other_prev-- : day+5),
+          day+6 > max ? other_next-- : (day+6 < 1 ? other_prev-- : day+6),
+        ];
+      else
+        res =
+        [
+          day   > max ? 0 : (day   < 1 ? 0 : day),
+          day+1 > max ? 0 : (day+1 < 1 ? 0 : day+1),
+          day+2 > max ? 0 : (day+2 < 1 ? 0 : day+2),
+          day+3 > max ? 0 : (day+3 < 1 ? 0 : day+3),
+          day+4 > max ? 0 : (day+4 < 1 ? 0 : day+4),
+          day+5 > max ? 0 : (day+5 < 1 ? 0 : day+5),
+          day+6 > max ? 0 : (day+6 < 1 ? 0 : day+6),
+        ];
       return res;
     },
     // calculates the week of the year for a given week of the month
@@ -421,6 +517,7 @@ export default
       if(typeof this.options.calculateWeek == 'function') return this.options.calculateWeek(new Date(this.cal_year, this.cal_month, 1 + 7*w));
         else return this.moment(new Date(this.cal_year, this.cal_month, 1 + 7*w)).isoWeek();
     },
+    // parse value + period (e.g. "+7d" or "-3w")
     relDate: function(val)
     {
       var i, duration, d = this.moment(), t = val.match(/0|[+\-]\d+[dmwy]/ig);

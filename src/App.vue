@@ -15,21 +15,21 @@
 				</p>
 				<p>and turn it into:</p>
 				<p>
-					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, 
-					    minDate:minimal, hideIfNoPrevNext:true, stepMonths:2, yearSuffix:'CE', showWeek:true}"></date-picker>
+					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true,
+					    minDate:minimal, hideIfNoPrevNext:true, stepMonths:1, showWeek:true, showOtherMonths:true, selectOtherMonths:true}"></date-picker>
 				</p>
 			</div>
 			<div class="col-md-8">
 				<h3>Example Code</h3>
         <pre>
 					<code class="html">
-&lt;date-picker v-bind:options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, minDate:minimal, hideIfNoPrevNext:true, stepMonths:2, yearSuffix:'CE', showWeek:true}"&gt;&lt;/date-picker&gt;
+&lt;date-picker v-bind:options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, minDate:minimal, hideIfNoPrevNext:true, stepMonths:1, showWeek:true, showOtherMonths:true}"&gt;&lt;/date-picker&gt;
 
 &lt;script&gt;
-export default 
+export default
 {
   name: 'app',
-  data () 
+  data ()
   {
     return {start:null,final:null, minimal:null};
   },
@@ -45,12 +45,13 @@ export default
   },
   methods:
   {
-    
+
   }
 }
 &lt;/script&gt;
 					</code>
         </pre>
+      </div>
 		</article>
 
   </section>
@@ -58,10 +59,10 @@ export default
 </template>
 
 <script>
-export default 
+export default
 {
   name: 'app',
-  data () 
+  data ()
   {
     return {start:null,final:null, minimal:null};
   },
@@ -77,7 +78,7 @@ export default
   },
   methods:
   {
-    
+
   }
 }
 </script>
@@ -91,39 +92,39 @@ section
 	margin-right: 30px;
 }
 
-.tgt 
+.tgt
 {
 	padding-top: 70px;
 	color: inherit;
 }
 
-.tgt:hover 
+.tgt:hover
 {
 	color: inherit;
 	text-decoration: none;
 }
 
-a:focus 
+a:focus
 {
 	outline: 0;
 }
 
-.btn 
+.btn
 {
 	padding: 4px 12px;
 }
 
-article + article 
+article + article
 {
 	border-top: 1px solid #eee;
 }
 
-article 
+article
 {
 	margin-bottom: 10px;
 }
 
-input.raw 
+input.raw
 {
 	width: 255px;
 	padding: 4px 6px;
