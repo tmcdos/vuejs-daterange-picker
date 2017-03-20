@@ -7,10 +7,16 @@
         </svg>
       </div>
       <div class="calendar-title" v-if="!swapMonYear">
-        <span class="calendar-month">{{ month_name(cal_month) }}</span>&nbsp;<span class="calendar-year">{{ cal_year + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</span>
+        <span class="calendar-month" v-if="!change_month">{{ month_name(cal_month) }}</span>
+        <select v-else class="select-month" v-model="month_sel" @change="newMonth"><option v-for="month_id in [0,1,2,3,4,5,6,7,8,9,10,11]" :value="month_id">{{ month_name(month_id) }}</option></select>
+        <span class="calendar-year" v-if="!change_year">{{ cal_year + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</span>
+        <select v-else class="select-year" v-model="year_sel" @change="newYear"><option v-for="year_id in year_range" :value="year_id">{{ year_id + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</option></select>
       </div>
       <div class="calendar-title" v-if="swapMonYear">
-        <span class="calendar-year">{{ cal_year + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</span>&nbsp;<span class="calendar-month">{{ month_name(cal_month) }}</span>
+        <span class="calendar-year" v-if="!change_year">{{ cal_year + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</span>
+        <select v-else class="select-year" v-model="year_sel" @change="newYear"><option v-for="year_id in year_range" :value="year_id">{{ year_id + (year_suffix != '' ? '&nbsp;'+year_suffix : '') }}</option></select>
+        <span class="calendar-month" v-if="!change_month">{{ month_name(cal_month) }}</span>
+        <select v-else class="select-month" v-model="month_sel" @change="newMonth"><option v-for="month_id in [0,1,2,3,4,5,6,7,8,9,10,11]" :value="month_id">{{ month_name(month_id) }}</option></select>
       </div>
       <div title="Next" class="next-box" @click="doNext" v-if="!(last_month && hideNavigation)">
         <svg viewBox="0 0 32 32" width="14px" height="14px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" :class="[last_month ? 'arrow-disabled' : 'arrow-active']">
@@ -64,12 +70,24 @@ export default
     var tmp =
     {
       today: new Date(),
+      month_sel: this.cal_month,
+      year_sel: this.cal_year,
     };
-    return tmp; // without Var there are strange unlogical syntax errors
+    return tmp; // without Var there are strange illogical syntax errors
   },
   mounted: function ()
   {
-    this.$emit('ready',this);
+    this.month_sel = this.cal_month;
+    this.year_sel = this.cal_year;
+    this.$emit('onReady',this);
+  },
+  watch:
+  {
+    datum: function(new_d)
+    {
+      this.month_sel = new_d.getMonth();
+      this.year_sel = new_d.getFullYear();
+    }
   },
   computed:
   {
@@ -123,9 +141,14 @@ export default
     // get day of the week for 1-st date in the previous month
     first_dow_prev: function()
     {
-      var d = new Date(this.cal_year, 1+this.cal_month, 0);
-      d.setMonth(-1);
-      var start = d.getDay();
+      var y = this.cal_year, m = this.cal_month;
+      m--;
+      if(m<0)
+      {
+        m = 11;
+        y--;
+      }
+      var start = new Date(y, m, 1).getDay();
       if(start==0) start = 7;
       return start;
     },
@@ -226,7 +249,26 @@ export default
     select_other_month: function()
     {
       if(this.options.selectOtherMonths != null) return this.options.selectOtherMonths;
-      else return false;
+        else return false;
+    },
+    change_month: function()
+    {
+      if(this.options.changeMonth != null) return this.options.changeMonth;
+        else return false;
+    },
+    change_year: function()
+    {
+      if(this.options.changeYear != null) return this.options.changeYear;
+        else return false;
+    },
+    year_range: function()
+    {
+      if(this.options.yearRange != null && this.isArray(this.options.yearRange)) return this.options.yearRange;
+      else
+      {
+        var y = this.cal_year;
+        return [y - 2, y - 1, y, y + 1, y + 2];
+      }
     }
   },
   methods:
@@ -514,8 +556,8 @@ export default
     // by default uses ISO-8601 (weeks start on Monday, 1-st week of year contains the 1-st Thursday)
     calc_week: function(w)
     {
-      if(typeof this.options.calculateWeek == 'function') return this.options.calculateWeek(new Date(this.cal_year, this.cal_month, 1 + 7*w));
-        else return this.moment(new Date(this.cal_year, this.cal_month, 1 + 7*w)).isoWeek();
+      if(typeof this.options.calculateWeek == 'function') return this.options.calculateWeek(new Date(this.cal_year, this.cal_month, 1 + 7*w, 0, 0, 0, 0));
+        else return this.moment(new Date(this.cal_year, this.cal_month, 1 + 7*w, 0, 0, 0, 0)).isoWeek();
     },
     // parse value + period (e.g. "+7d" or "-3w")
     relDate: function(val)
@@ -550,6 +592,18 @@ export default
     doNext: function()
     {
       if(!this.last_month) this.$emit('onNext');
+    },
+    // month changed from the drop-down
+    newMonth: function()
+    {
+      var tmp = { value: this.month_sel, old: this.datum };
+      this.$emit('onMonth',tmp);
+    },
+    // year changed from the drop-down
+    newYear: function()
+    {
+      var tmp = { value: this.year_sel, old: this.datum };
+      this.$emit('onYear',tmp);
     }
   }
 }
@@ -610,12 +664,33 @@ $bord_radius: 4px;
 
 .calendar-title
 {
-  margin: 0 1em;
+  margin: 0 0.65em;
   line-height: 1.8em;
   text-align: center;
   color: #222;
   font-weight: bold;
   flex-grow: 1;
+  white-space: nowrap;
+}
+
+.calendar-month
+{
+
+}
+
+.select-month
+{
+
+}
+
+.calendar-year
+{
+
+}
+
+.select-year
+{
+
 }
 
 .prev-box,
@@ -683,6 +758,7 @@ $bord_radius: 4px;
   color: red;
 }
 
+/* must be specific for TD, otherwise ".calendar-table" takes precedence */
 td.calendar-weeks
 {
   text-align: center;
@@ -728,7 +804,7 @@ td.calendar-weeks
   filter: Alpha(Opacity=35);
 }
 
-/* after other cell types, but before PERIOD */
+/* after other cell types, but before ".period" */
 .cell-weekend
 {
   color: red;

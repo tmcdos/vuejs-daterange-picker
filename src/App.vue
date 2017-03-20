@@ -15,7 +15,7 @@
 				</p>
 				<p>and turn it into:</p>
 				<p>
-					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:false,
+					<date-picker :options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:false, changeMonth: true, changeYear:true,
 					    minDate:minimal, hideIfNoPrevNext:true, stepMonths:1, showWeek:true, showOtherMonths:true, selectOtherMonths:true}"></date-picker>
 				</p>
 			</div>
@@ -23,7 +23,7 @@
 				<h3>Example Code</h3>
         <pre>
 					<code class="html">
-&lt;date-picker v-bind:options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, minDate:minimal, hideIfNoPrevNext:true, stepMonths:1, showWeek:true, showOtherMonths:true}"&gt;&lt;/date-picker&gt;
+&lt;date-picker v-bind:options="{inline_picker:true, startDate:start, finalDate:final, showMonthAfterYear:true, changeMonth:true, changeYear:true, minDate:minimal, hideIfNoPrevNext:true, stepMonths:1, showWeek:true, showOtherMonths:true, selectOtherMonths:true}"&gt;&lt;/date-picker&gt;
 
 &lt;script&gt;
 export default

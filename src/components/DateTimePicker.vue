@@ -8,23 +8,23 @@
       <div class="flex-row">
         <preset-ranges :presets="options.presets" @onPreset="doPreset"></preset-ranges>
         <div class="flex-row calendar" v-if="month_cnt <= 1">
-          <month-calendar class="cal_left cal_right" :datum="month_right" :options="params" @onSelect="doSelect" @onPrev="doPrev" @onNext="doNext"></month-calendar>
+          <month-calendar class="cal_left cal_right" :datum="month_right"  :options="params" @onSelect="doSelect" @onPrev="doPrev" @onNext="doNext" @onMonth="doMonth" @onYear="doYear"></month-calendar>
         </div>
         <div class="flex-row calendar" v-if="month_cnt == 2">
-          <month-calendar class="cal_left"  :datum="month_center" :options="params" @onSelect="doSelect" @onPrev="doPrev"></month-calendar>
-          <month-calendar class="cal_right" :datum="month_right"  :options="params" @onSelect="doSelect" @onNext="doNext"></month-calendar>
+          <month-calendar class="cal_left"           :datum="month_center" :options="params" @onSelect="doSelect" @onPrev="doPrev" @onMonth="doMonth" @onYear="doYear"></month-calendar>
+          <month-calendar class="cal_right"          :datum="month_right"  :options="params" @onSelect="doSelect" @onNext="doNext" @onMonth="doMonth" @onYear="doYear"></month-calendar>
         </div>
         <div class="flex-row calendar" v-if="month_cnt >= 3">
-          <month-calendar class="cal_left"   :datum="month_left"   :options="params" @onSelect="doSelect" @onPrev="doPrev"></month-calendar>
-          <month-calendar class="cal_center" :datum="month_center" :options="params" @onSelect="doSelect"></month-calendar>
-          <month-calendar class="cal_right"  :datum="month_right"  :options="params" @onSelect="doSelect" @onNext="doNext"></month-calendar>
+          <month-calendar class="cal_left"           :datum="month_left"   :options="params" @onSelect="doSelect" @onPrev="doPrev" @onMonth="doMonth" @onYear="doYear"></month-calendar>
+          <month-calendar class="cal_center"         :datum="month_center" :options="params" @onSelect="doSelect"                  @onMonth="doMonth" @onYear="doYear"></month-calendar>
+          <month-calendar class="cal_right"          :datum="month_right"  :options="params" @onSelect="doSelect" @onNext="doNext" @onMonth="doMonth" @onYear="doYear"></month-calendar>
         </div>
       </div>
       <div class="button-panel" v-if="txt_apply !='' || txt_clear !='' || txt_cancel !=''">
-        <button aria-disabled="false" class="button-primary" role="button" type="button" v-if="txt_apply != ''" @click="doApply">
+        <button aria-disabled="false" class="button-primary"   role="button" type="button" v-if="txt_apply != ''"  @click="doApply">
           <span class="button-text">{{ txt_apply }}</span>
         </button>
-        <button aria-disabled="false" class="button-secondary" role="button" type="button" v-if="txt_clear != ''" @click="doClear">
+        <button aria-disabled="false" class="button-secondary" role="button" type="button" v-if="txt_clear != ''"  @click="doClear">
           <span class="button-text">{{ txt_clear }}</span>
         </button>
         <button aria-disabled="false" class="button-secondary" role="button" type="button" v-if="txt_cancel != ''" @click="doCancel">
@@ -72,7 +72,7 @@ export default
       old_start: null,
       old_final: null,
     };
-    return tmp; // without Var there are strange unlogical syntax errors
+    return tmp; // without Var there are strange illogical syntax errors
   },
   created: function()
   {
@@ -189,6 +189,10 @@ export default
         y--;
       }
       d.setFullYear(y,m,1);
+      d.setHours(0);
+      d.setMinutes(0);
+      d.setSeconds(0);
+      d.setMilliseconds(0);
       return d;
     },
     month_center: function()
@@ -202,6 +206,10 @@ export default
         y--;
       }
       d.setFullYear(y,m,1);
+      d.setHours(0);
+      d.setMinutes(0);
+      d.setSeconds(0);
+      d.setMilliseconds(0);
       return d;
     },
     month_right: function()
@@ -227,6 +235,9 @@ export default
         dayNamesShort: this.options.dayNamesShort, // array with 3-letter names of week days
         monthNames: this.options.monthNames, // array with full month names
         monthNamesShort: this.options.monthNamesShort, // array with 3-letter month names
+        changeMonth: this.options.changeMonth, // whether to allow drop-down for month names
+        changeYear: this.options.changeYear, // whether to allow drop-down for years
+        yearRange: this.options.yearRange, // array with allowed years for the drop-down
         calculateWeek: this.options.calculateWeek, // optional user-provided function
         hideIfNoPrevNext: this.options.hideIfNoPrevNext, // hide navigation arrows
         showMonthAfterYear: this.options.showMonthAfterYear, // otherwise year is after month
@@ -322,6 +333,10 @@ export default
         y--;
       }
       d.setFullYear(y,m,1);
+      d.setHours(0);
+      d.setMinutes(0);
+      d.setSeconds(0);
+      d.setMilliseconds(0);
       this.datum = d;
     },
     doNext: function()
@@ -336,7 +351,71 @@ export default
         y++;
       }
       d.setFullYear(y,m,1);
+      d.setHours(0);
+      d.setMinutes(0);
+      d.setSeconds(0);
+      d.setMilliseconds(0);
       this.datum = d;
+    },
+    doMonth: function(data)
+    {
+      // data = { value, old }
+      if(data.old == this.datum) this.datum = new Date(data.old.getFullYear(), data.value, 1, 0, 0, 0, 0);
+      else if(data.old == this.month_center)
+      {
+        // +1 month
+        var y = data.old.getFullYear(), m = data.value;
+        m++;
+        if(m>11)
+        {
+          m = 0;
+          y++;
+        }
+        this.datum = new Date(y, m, 1, 0, 0, 0, 0);
+      }
+      else
+      {
+        // +2 months
+        var y = data.old.getFullYear(), m = data.value;
+        m++;
+        m++;
+        if(m>11)
+        {
+          m -= 12;
+          y++;
+        }
+        this.datum = new Date(y, m, 1, 0, 0, 0, 0);
+      }
+    },
+    doYear: function(data)
+    {
+      // data = { value, old }
+      if(data.old == this.datum) this.datum = new Date(data.value, data.old.getMonth(), 1, 0, 0, 0, 0);
+      else if(data.old == this.month_center)
+      {
+        // +1 month
+        var y = data.value, m = data.old.getMonth();
+        m++;
+        if(m>11)
+        {
+          m = 0;
+          y++;
+        }
+        this.datum = new Date(y, m, 1, 0, 0, 0, 0);
+      }
+      else
+      {
+        // +2 months
+        var y = data.value, m = data.old.getMonth();
+        m++;
+        m++;
+        if(m>11)
+        {
+          m -= 12;
+          y++;
+        }
+        this.datum = new Date(y, m, 1, 0, 0, 0, 0);
+      }
     },
     getLeftOfs: function(el)
     {
@@ -442,6 +521,11 @@ $bord_radius: 4px;
   border-top: 1px solid #aaa;
 }
 
+.button-text
+{
+
+}
+
 .button-primary,
 .button-secondary
 {
@@ -468,5 +552,10 @@ $bord_radius: 4px;
 .calendar
 {
   padding: 2pt 4pt;
+}
+
+.cal_left, .cal_right, .cal_center
+{
+  /* placeholders for CSS-rules in MonthCalendar.vue */
 }
 </style>

@@ -49,6 +49,9 @@ Explanation of options:
 | stepMonths | Integer | 1 | Set how many months to move when clicking the **Previous/Next** links |
 | hideIfNoPrevNext | Boolean | `False` | Normally the **previous** and **next** links are disabled when not applicable (see the `minDate` and `maxDate` options). You can hide them altogether by setting this attribute to `True` |
 | yearSuffix | String | `""` | Additional text to display after the year in the month headers (e.g. AC/BC) |
+| changeYear | Boolean | `False` | Shows drop-down list for changing the year |
+| yearRange | Array | `[Curr-2, Curr-1, Curr, Curr+1, Curr+2]` | Which years to show in the drop-down list |
+| changeMonth | Boolean | `False` | Shows drop-down list for changing the month |
 | showMonthAfterYear | Boolean | `False` | Whether to show the month after the year in the header (default is before) |
 | showWeek | Boolean | `False` | When **True**, a column is added to show the week of the year. The `calculateWeek` option determines how the week of the year is calculated |
 | weekHeader | String | `Wk` | The text to display for the week of the year column heading. Use the `showWeek` option to display this column |
